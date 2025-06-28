@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  code-server:
+    image: idex/mycodeserver:latest
+    build:  # Assuming the Dockerfile is in the same directory as docker-compose.yml
+      context: .  # Assuming the Dockerfile is in the same directory as docker-compose.yml       dockerfile:
+      dockerfile: Dockerfile # Specify the Dockerfile name if it's not the default
+    ports:
+      - "8080:8080" #codeserver 
+      - "8000:8000" #backend
+      - "3000:3000" #frontend
+      - "27017:27017" #mongodb
+      - "5432:5432" #postgres  
+    volumes:
+      - ../../:/home/coder/aiaas   # Persist data for the project
+      - /var/run/docker.sock:/var/run/docker.sock #for access outer docker container 
+    environment:
+      - PASSWORD=pwd
+    restart: unless-stopped
+
+
+# version: "3.8"
+
+# services:
+#   codeserver:
+#     # image: my-code-server # Replace with the actual image name
+#     # image: code-server-eme:latest
+#     # image: codeserver-eme:250221
+#     image: idex/mycodeserver:latest
+#     build:
+#       context: .  # Assuming the Dockerfile is in the same directory as docker-compose.yml
+#       dockerfile: dockerfile.codeserver # Specify the Dockerfile name if it's not the default
+#     ports:
+#       - "8082:8081"  # Expose the code-server port
+#       - "3000:3000"
+#       # - "3001:3001"cl
+#     volumes:
+#       # - ./data:/root # Persist data
+#       # - /Users/krishna/Desktop/neuralix/test1/surya-drishti:/root/src
+#       # - /Users/krishna/Desktop/krishna_project/code_server:/root/eme
+#       # - /Users/krishna/Desktop/neuralix/eme-backend:/root/eme
+#       - /Users/krishna/Desktop/neuralix/idex/aiaas:/root/idex
+#     # Mount a volume to persist your data
+#     # environment: # Define any necessary environment variables
+#     #   - PASSWORD=your_password

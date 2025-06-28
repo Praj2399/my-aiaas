@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: aiaas-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: aiaas
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - aiaas-network
+      
+  mongodb:
+    image: mongo:7.0
+    container_name: aiaas-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: adminpassword
+      MONGO_INITDB_DATABASE: aiaas
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - aiaas-network
+
+  backend:
+    build: .
+    image: aiaas-backend
+    container_name: aiaas-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+      - ./app/ds_models:/app/ds_models
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - POSTGRES_CONNECTION_STRING=postgresql+asyncpg://user:password@postgres:5432/aiaas
+      - MONGODB_CONNECTION_STRING=mongodb://admin:adminpassword@mongodb:27017
+    depends_on:
+      - postgres
+      - mongodb
+    networks:
+      - aiaas-network
+    command: ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+volumes:
+  postgres_data:
+  mongodb_data:
+
+networks:
+  aiaas-network:
+    driver: bridge
