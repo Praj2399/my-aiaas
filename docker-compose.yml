@@ -1,0 +1,76 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: aiaas-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: aiaas
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgress_data:/var/lib/postgresql/data
+    networks:
+      - aiaas-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: aiaas-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: adminpassword
+      MONGO_INITDB_DATABASE: aiaas
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - aiaas-network
+
+  backend:
+    build:
+      context: .
+    image: aiaas-backend
+    container_name: aiaas-backend
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONUNBUFFERED: 1
+      PYTHONPATH: /app
+      MONGODB_CONNECTION_STRING: mongodb://admin:adminpassword@mongodb:27017
+      POSTGRES_CONNECTION_STRING: postgresql+asyncpg://user:password@postgres:5432/aiaas
+
+
+    depends_on:
+      - mongodb
+      - postgres
+    networks:
+      - aiaas-network
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]  # dev mode
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  postgress_data:
+
+networks:
+  aiaas-network:
+    external: true
